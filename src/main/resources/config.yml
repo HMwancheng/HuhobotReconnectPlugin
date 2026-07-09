@@ -1,0 +1,11 @@
+# 检测到断开后等待多少秒再重连（避免与HuHoBot自带重连冲突）
+reconnect_delay: 30
+
+# 最大重连次数，0表示无限重连
+max_attempts: 0
+
+# 当无法解析封禁解封时间时的默认等待时间（秒）
+ban_wait_time: 600
+
+# 是否启用自动重连
+enabled: true
