@@ -13,14 +13,14 @@ public class ConsoleHandler extends Handler {
 
     private final HuhobotReconnectPlugin plugin;
 
-    // 断开连接
+    // 断开连接（含服务端命令断开如"顶替连接"）
     private static final Pattern DISCONNECT_PATTERN = Pattern.compile(
-            "\\[HuHoBot] (连接已断开|连接失败|连接超时)"
+            "\\[HuHoBot] (连接已断开|连接失败|连接超时|服务端命令断开连接)"
     );
 
-    // 握手成功
+    // 握手成功（含"握手完成!"变体）
     private static final Pattern HANDSHAKE_SUCCESS_PATTERN = Pattern.compile(
-            "\\[HuHoBot] 与服务端握手成功"
+            "\\[HuHoBot] (与服务端握手成功|握手完成!)"
     );
 
     // 封禁 + 解封时间: "服务器被封禁.*于 2026-07-03 20:46:24 解封"
