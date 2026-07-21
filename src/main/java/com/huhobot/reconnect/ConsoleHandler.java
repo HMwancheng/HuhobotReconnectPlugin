@@ -15,12 +15,12 @@ public class ConsoleHandler extends Handler {
 
     // 断开连接（含服务端命令断开如"顶替连接"）
     private static final Pattern DISCONNECT_PATTERN = Pattern.compile(
-            "\\[HuHoBot] (连接已断开|连接失败|连接超时|服务端命令断开连接)"
+            "连接已断开|连接失败|连接超时|服务端命令断开连接"
     );
 
     // 握手成功（含"握手完成!"变体）
     private static final Pattern HANDSHAKE_SUCCESS_PATTERN = Pattern.compile(
-            "\\[HuHoBot] (与服务端握手成功|握手完成!)"
+            "与服务端握手成功|握手完成!"
     );
 
     // 封禁 + 解封时间: "服务器被封禁.*于 2026-07-03 20:46:24 解封"
@@ -33,12 +33,12 @@ public class ConsoleHandler extends Handler {
             "频繁连接导致的服务器被封禁"
     );
 
-    // 重连命令响应 - 已在连接状态（无[HuHoBot]前缀）
+    // 重连命令响应 - 已在连接状态（来自Bukkit，非HuHoBot logger）
     private static final Pattern ALREADY_CONNECTED_PATTERN = Pattern.compile(
             "重连机器人失败：已在连接状态"
     );
 
-    // 重连命令响应 - 重连成功（无[HuHoBot]前缀）
+    // 重连命令响应 - 重连成功（来自Bukkit，非HuHoBot logger）
     private static final Pattern RECONNECT_SUCCESS_PATTERN = Pattern.compile(
             "重连机器人成功"
     );
@@ -56,47 +56,52 @@ public class ConsoleHandler extends Handler {
         String message = record.getMessage();
         if (message == null) return;
 
-        // 检测握手成功
-        if (HANDSHAKE_SUCCESS_PATTERN.matcher(message).find()) {
+        // 判断是否来自HuHoBot的日志（logger name包含"HuHoBot"）
+        boolean isHuHoBot = record.getLoggerName() != null
+                && record.getLoggerName().contains("HuHoBot");
+
+        // 检测握手成功（仅HuHoBot）
+        if (isHuHoBot && HANDSHAKE_SUCCESS_PATTERN.matcher(message).find()) {
             runOnMainThread(plugin::onHandshakeSuccess);
             return;
         }
 
-        // 检测封禁（含解封时间）
-        Matcher banTimeMatcher = BAN_WITH_TIME_PATTERN.matcher(message);
-        if (banTimeMatcher.find()) {
-            String timeStr = banTimeMatcher.group(1);
-            runOnMainThread(() -> {
-                try {
-                    LocalDateTime unbanTime = LocalDateTime.parse(timeStr, TIME_FORMATTER);
-                    plugin.onBanned(unbanTime);
-                } catch (Exception ignored) {
-                    plugin.onBanned(null);
-                }
-            });
-            return;
+        // 检测封禁（仅HuHoBot）
+        if (isHuHoBot) {
+            Matcher banTimeMatcher = BAN_WITH_TIME_PATTERN.matcher(message);
+            if (banTimeMatcher.find()) {
+                String timeStr = banTimeMatcher.group(1);
+                runOnMainThread(() -> {
+                    try {
+                        LocalDateTime unbanTime = LocalDateTime.parse(timeStr, TIME_FORMATTER);
+                        plugin.onBanned(unbanTime);
+                    } catch (Exception ignored) {
+                        plugin.onBanned(null);
+                    }
+                });
+                return;
+            }
+
+            if (BAN_PATTERN.matcher(message).find()) {
+                runOnMainThread(() -> plugin.onBanned(null));
+                return;
+            }
         }
 
-        // 检测封禁（无解封时间）
-        if (BAN_PATTERN.matcher(message).find()) {
-            runOnMainThread(() -> plugin.onBanned(null));
-            return;
-        }
-
-        // 检测重连命令响应 - 已在连接状态
+        // 检测重连命令响应 - 已在连接状态（不限制logger）
         if (ALREADY_CONNECTED_PATTERN.matcher(message).find()) {
             runOnMainThread(plugin::onAlreadyConnected);
             return;
         }
 
-        // 检测重连命令响应 - 重连成功
+        // 检测重连命令响应 - 重连成功（不限制logger）
         if (RECONNECT_SUCCESS_PATTERN.matcher(message).find()) {
             runOnMainThread(plugin::onReconnectSuccess);
             return;
         }
 
-        // 检测断开连接
-        if (DISCONNECT_PATTERN.matcher(message).find()) {
+        // 检测断开连接（仅HuHoBot）
+        if (isHuHoBot && DISCONNECT_PATTERN.matcher(message).find()) {
             runOnMainThread(plugin::onDisconnected);
         }
     }
