@@ -16,12 +16,14 @@ public class HuhobotReconnectPlugin extends JavaPlugin {
 
     private ConsoleHandler consoleHandler;
     private BukkitTask reconnectTask;
+    private BukkitTask healthCheckTask;
     private int reconnectAttempts;
     private boolean enabled;
 
     private int reconnectDelay;
     private int maxAttempts;
     private int banWaitTime;
+    private int healthCheckInterval;
 
     @Override
     public void onEnable() {
@@ -31,21 +33,26 @@ public class HuhobotReconnectPlugin extends JavaPlugin {
         consoleHandler = new ConsoleHandler(this);
         ROOT_LOGGER.addHandler(consoleHandler);
 
-        getLogger().info("HuHoBot重连插件已启用");
+        startHealthCheck();
+
+        getLogger().info("HuHoBot重连插件已启用 (reconnect_delay=" + reconnectDelay
+                + "s, health_check=" + healthCheckInterval + "s)");
     }
 
     @Override
     public void onDisable() {
         ROOT_LOGGER.removeHandler(consoleHandler);
         cancelReconnectTask();
+        stopHealthCheck();
         getLogger().info("HuHoBot重连插件已禁用");
     }
 
     private void loadConfig() {
         reloadConfig();
-        reconnectDelay = getConfig().getInt("reconnect_delay", 30);
+        reconnectDelay = getConfig().getInt("reconnect_delay", 15);
         maxAttempts = getConfig().getInt("max_attempts", 0);
         banWaitTime = getConfig().getInt("ban_wait_time", 600);
+        healthCheckInterval = getConfig().getInt("health_check_interval", 300);
         enabled = getConfig().getBoolean("enabled", true);
     }
 
@@ -91,6 +98,21 @@ public class HuhobotReconnectPlugin extends JavaPlugin {
         }, ticks);
     }
 
+    // 健康检查/重连命令响应：已在连接状态
+    void onAlreadyConnected() {
+        reconnectAttempts = 0;
+        if (reconnectTask != null) {
+            getLogger().info("HuHoBot已在连接状态，取消重连任务");
+            cancelReconnectTask();
+        }
+    }
+
+    // 健康检查/重连命令响应：重连成功
+    void onReconnectSuccess() {
+        reconnectAttempts = 0;
+        getLogger().info("HuHoBot重连成功");
+    }
+
     // ==================== 重连调度 ====================
 
     private void scheduleReconnect() {
@@ -104,7 +126,6 @@ public class HuhobotReconnectPlugin extends JavaPlugin {
     private void doReconnect() {
         if (!enabled) return;
 
-        // 检查重连次数
         if (maxAttempts > 0 && reconnectAttempts >= maxAttempts) {
             getLogger().warning("已达到最大重连次数 (" + maxAttempts + ")，停止重连");
             return;
@@ -124,26 +145,53 @@ public class HuhobotReconnectPlugin extends JavaPlugin {
         }
     }
 
+    // ==================== 健康检查 ====================
+
+    private void startHealthCheck() {
+        if (healthCheckInterval <= 0) return;
+
+        stopHealthCheck();
+        long ticks = healthCheckInterval * 20L;
+        healthCheckTask = Bukkit.getScheduler().runTaskTimer(this, () -> {
+            if (!enabled || reconnectTask != null) return;
+            getLogger().info("定期健康检查：执行重连检测...");
+            Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "huhobot reconnect");
+        }, ticks, ticks);
+    }
+
+    private void stopHealthCheck() {
+        if (healthCheckTask != null) {
+            healthCheckTask.cancel();
+            healthCheckTask = null;
+        }
+    }
+
     // ==================== 命令处理 ====================
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (args.length > 0 && args[0].equalsIgnoreCase("reload")) {
             loadConfig();
+            stopHealthCheck();
+            startHealthCheck();
             sender.sendMessage("[HuHoBotReconnect] 配置已重载");
             getLogger().info("配置已重载: reconnect_delay=" + reconnectDelay
+                    + ", health_check=" + healthCheckInterval
                     + ", max_attempts=" + maxAttempts
                     + ", ban_wait_time=" + banWaitTime
                     + ", enabled=" + enabled);
             return true;
         }
 
-        sender.sendMessage("[HuHoBotReconnect] 状态: enabled=" + enabled
-                + ", reconnect_delay=" + reconnectDelay
+        sender.sendMessage("[HuHoBotReconnect] 状态:"
+                + " enabled=" + enabled
+                + ", reconnect_delay=" + reconnectDelay + "s"
+                + ", health_check=" + healthCheckInterval + "s"
                 + ", max_attempts=" + maxAttempts
-                + ", ban_wait_time=" + banWaitTime
+                + ", ban_wait_time=" + banWaitTime + "s"
                 + ", reconnect_attempts=" + reconnectAttempts
-                + ", has_pending_task=" + (reconnectTask != null));
+                + ", pending_reconnect=" + (reconnectTask != null)
+                + ", health_check_active=" + (healthCheckTask != null));
         return true;
     }
 }

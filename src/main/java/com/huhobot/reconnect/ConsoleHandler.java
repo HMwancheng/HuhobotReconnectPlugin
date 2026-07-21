@@ -33,6 +33,16 @@ public class ConsoleHandler extends Handler {
             "频繁连接导致的服务器被封禁"
     );
 
+    // 重连命令响应 - 已在连接状态（无[HuHoBot]前缀）
+    private static final Pattern ALREADY_CONNECTED_PATTERN = Pattern.compile(
+            "重连机器人失败：已在连接状态"
+    );
+
+    // 重连命令响应 - 重连成功（无[HuHoBot]前缀）
+    private static final Pattern RECONNECT_SUCCESS_PATTERN = Pattern.compile(
+            "重连机器人成功"
+    );
+
     private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     public ConsoleHandler(HuhobotReconnectPlugin plugin) {
@@ -70,6 +80,18 @@ public class ConsoleHandler extends Handler {
         // 检测封禁（无解封时间）
         if (BAN_PATTERN.matcher(message).find()) {
             runOnMainThread(() -> plugin.onBanned(null));
+            return;
+        }
+
+        // 检测重连命令响应 - 已在连接状态
+        if (ALREADY_CONNECTED_PATTERN.matcher(message).find()) {
+            runOnMainThread(plugin::onAlreadyConnected);
+            return;
+        }
+
+        // 检测重连命令响应 - 重连成功
+        if (RECONNECT_SUCCESS_PATTERN.matcher(message).find()) {
+            runOnMainThread(plugin::onReconnectSuccess);
             return;
         }
 

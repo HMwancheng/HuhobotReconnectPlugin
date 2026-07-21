@@ -1,5 +1,8 @@
-# 检测到断开后等待多少秒再重连（避免与HuHoBot自带重连冲突）
-reconnect_delay: 30
+# 检测到断开后等待多少秒再重连
+reconnect_delay: 15
+
+# 定期健康检查间隔（秒），0=禁用。主动执行重连命令检测连接状态
+health_check_interval: 300
 
 # 最大重连次数，0表示无限重连
 max_attempts: 0
