@@ -1,0 +1,8 @@
+{
+    "id": "huhobotreconnect",
+    "name": "HuhobotReconnect",
+    "version": "1.0.0",
+    "authors": ["HuhobotReconnect"],
+    "main": "com.huhobot.reconnect.velocity.VelocityPlugin",
+    "description": "Auto reconnect HuHoBot when disconnected"
+}

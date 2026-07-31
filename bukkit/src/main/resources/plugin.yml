@@ -1,6 +1,6 @@
 name: HuhobotReconnect
 version: 1.0.0
-main: com.huhobot.reconnect.HuhobotReconnectPlugin
+main: com.huhobot.reconnect.bukkit.BukkitPlugin
 api-version: "1.21"
 author: HuhobotReconnect
 description: Auto reconnect HuHoBot when disconnected

@@ -1,7 +1,5 @@
 package com.huhobot.reconnect;
 
-import org.bukkit.Bukkit;
-
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.logging.Handler;
@@ -9,64 +7,62 @@ import java.util.logging.LogRecord;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class ConsoleHandler extends Handler {
+/**
+ * 控制台日志拦截器，平台无关（纯 java.util.logging）
+ */
+public class ConsoleCapture extends Handler {
 
-    private final HuhobotReconnectPlugin plugin;
+    private final ReconnectPlatform platform;
+    private final ReconnectManager manager;
 
-    // 断开连接（含服务端命令断开如"顶替连接"）
     private static final Pattern DISCONNECT_PATTERN = Pattern.compile(
             "连接已断开|连接失败|连接超时|服务端命令断开连接"
     );
 
-    // 握手成功（含"握手完成!"变体）
     private static final Pattern HANDSHAKE_SUCCESS_PATTERN = Pattern.compile(
             "与服务端握手成功|握手完成!"
     );
 
-    // 封禁 + 解封时间: "服务器被封禁.*于 2026-07-03 20:46:24 解封"
     private static final Pattern BAN_WITH_TIME_PATTERN = Pattern.compile(
             "服务器被封禁.*于 (\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}) 解封"
     );
 
-    // 封禁（无解封时间）
     private static final Pattern BAN_PATTERN = Pattern.compile(
             "频繁连接导致的服务器被封禁"
     );
 
-    // 重连命令响应 - 已在连接状态（来自Bukkit，非HuHoBot logger）
     private static final Pattern ALREADY_CONNECTED_PATTERN = Pattern.compile(
             "重连机器人失败：已在连接状态"
     );
 
-    // 重连命令响应 - 重连成功（来自Bukkit，非HuHoBot logger）
     private static final Pattern RECONNECT_SUCCESS_PATTERN = Pattern.compile(
             "重连机器人成功"
     );
 
     private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
-    public ConsoleHandler(HuhobotReconnectPlugin plugin) {
-        this.plugin = plugin;
+    public ConsoleCapture(ReconnectPlatform platform, ReconnectManager manager) {
+        this.platform = platform;
+        this.manager = manager;
     }
 
     @Override
     public void publish(LogRecord record) {
-        if (!plugin.isEnabled()) return;
+        if (!platform.isEnabled()) return;
 
         String message = record.getMessage();
         if (message == null) return;
 
-        // 判断是否来自HuHoBot的日志（logger name包含"HuHoBot"）
         boolean isHuHoBot = record.getLoggerName() != null
                 && record.getLoggerName().contains("HuHoBot");
 
-        // 检测握手成功（仅HuHoBot）
+        // 检测握手成功
         if (isHuHoBot && HANDSHAKE_SUCCESS_PATTERN.matcher(message).find()) {
-            runOnMainThread(plugin::onHandshakeSuccess);
+            runOnMainThread(manager::onHandshakeSuccess);
             return;
         }
 
-        // 检测封禁（仅HuHoBot）
+        // 检测封禁
         if (isHuHoBot) {
             Matcher banTimeMatcher = BAN_WITH_TIME_PATTERN.matcher(message);
             if (banTimeMatcher.find()) {
@@ -74,40 +70,39 @@ public class ConsoleHandler extends Handler {
                 runOnMainThread(() -> {
                     try {
                         LocalDateTime unbanTime = LocalDateTime.parse(timeStr, TIME_FORMATTER);
-                        plugin.onBanned(unbanTime);
+                        manager.onBanned(unbanTime);
                     } catch (Exception ignored) {
-                        plugin.onBanned(null);
+                        manager.onBanned(null);
                     }
                 });
                 return;
             }
 
             if (BAN_PATTERN.matcher(message).find()) {
-                runOnMainThread(() -> plugin.onBanned(null));
+                runOnMainThread(() -> manager.onBanned(null));
                 return;
             }
         }
 
-        // 检测重连命令响应 - 已在连接状态（不限制logger）
+        // 检测重连命令响应
         if (ALREADY_CONNECTED_PATTERN.matcher(message).find()) {
-            runOnMainThread(plugin::onAlreadyConnected);
+            runOnMainThread(manager::onAlreadyConnected);
             return;
         }
 
-        // 检测重连命令响应 - 重连成功（不限制logger）
         if (RECONNECT_SUCCESS_PATTERN.matcher(message).find()) {
-            runOnMainThread(plugin::onReconnectSuccess);
+            runOnMainThread(manager::onReconnectSuccess);
             return;
         }
 
-        // 检测断开连接（仅HuHoBot）
+        // 检测断开连接
         if (isHuHoBot && DISCONNECT_PATTERN.matcher(message).find()) {
-            runOnMainThread(plugin::onDisconnected);
+            runOnMainThread(manager::onDisconnected);
         }
     }
 
     private void runOnMainThread(Runnable task) {
-        Bukkit.getScheduler().runTask(plugin, task);
+        platform.runOnMainThread(task);
     }
 
     @Override

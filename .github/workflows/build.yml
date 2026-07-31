@@ -24,8 +24,14 @@ jobs:
       - name: Build with Maven
         run: mvn -B package --file pom.xml
 
-      - name: Upload artifact
+      - name: Upload Bukkit artifact
         uses: actions/upload-artifact@v4
         with:
-          name: HuhobotReconnect
-          path: target/HuhobotReconnect-*.jar
+          name: HuhobotReconnect-Bukkit
+          path: bukkit/target/HuhobotReconnect-bukkit-*.jar
+
+      - name: Upload Velocity artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: HuhobotReconnect-Velocity
+          path: velocity/target/HuhobotReconnect-velocity-*.jar
