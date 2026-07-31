@@ -105,7 +105,7 @@ public class BukkitPlugin extends JavaPlugin implements ReconnectPlatform {
         getLogger().warning(message);
     }
 
-    @Override public boolean isEnabled() { return enabled; }
+    @Override public boolean isActive() { return enabled; }
     @Override public int getReconnectDelay() { return reconnectDelay; }
     @Override public int getMaxAttempts() { return maxAttempts; }
     @Override public int getBanWaitTime() { return banWaitTime; }

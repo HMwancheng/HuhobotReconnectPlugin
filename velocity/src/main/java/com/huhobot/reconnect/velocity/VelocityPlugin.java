@@ -185,7 +185,7 @@ public class VelocityPlugin implements ReconnectPlatform {
         logger.warning(message);
     }
 
-    @Override public boolean isEnabled() { return enabled; }
+    @Override public boolean isActive() { return enabled; }
     @Override public int getReconnectDelay() { return reconnectDelay; }
     @Override public int getMaxAttempts() { return maxAttempts; }
     @Override public int getBanWaitTime() { return banWaitTime; }

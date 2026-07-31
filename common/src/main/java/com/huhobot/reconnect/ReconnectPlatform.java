@@ -30,7 +30,7 @@ public interface ReconnectPlatform {
     void warning(String message);
 
     /** 配置读取 */
-    boolean isEnabled();
+    boolean isActive();
     int getReconnectDelay();
     int getMaxAttempts();
     int getBanWaitTime();

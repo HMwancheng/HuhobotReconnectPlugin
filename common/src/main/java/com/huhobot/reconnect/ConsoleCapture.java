@@ -48,7 +48,7 @@ public class ConsoleCapture extends Handler {
 
     @Override
     public void publish(LogRecord record) {
-        if (!platform.isEnabled()) return;
+        if (!platform.isActive()) return;
 
         String message = record.getMessage();
         if (message == null) return;

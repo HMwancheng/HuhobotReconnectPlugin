@@ -32,7 +32,7 @@ public class ReconnectManager {
     // ==================== 回调方法 ====================
 
     public void onDisconnected() {
-        if (!platform.isEnabled()) return;
+        if (!platform.isActive()) return;
         if (reconnectTaskPending) return;
 
         platform.info("检测到HuHoBot断开连接，将在 " + platform.getReconnectDelay() + " 秒后尝试重连");
@@ -95,7 +95,7 @@ public class ReconnectManager {
     }
 
     private void doReconnect() {
-        if (!platform.isEnabled()) return;
+        if (!platform.isActive()) return;
 
         if (platform.getMaxAttempts() > 0 && reconnectAttempts >= platform.getMaxAttempts()) {
             platform.warning("已达到最大重连次数 (" + platform.getMaxAttempts() + ")，停止重连");
