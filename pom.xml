@@ -10,7 +10,7 @@
     <packaging>pom</packaging>
 
     <name>HuhobotReconnect</name>
-    <description>Auto reconnect HuHoBot - Bukkit & Velocity</description>
+    <description>Auto reconnect HuHoBot - Bukkit and Velocity</description>
 
     <modules>
         <module>common</module>
