@@ -16,7 +16,7 @@ public class ConsoleCapture extends Handler {
     private final ReconnectManager manager;
 
     private static final Pattern DISCONNECT_PATTERN = Pattern.compile(
-            "连接已断开|连接失败|连接超时|服务端命令断开连接"
+            "已断开连接|连接已断开|连接失败|连接超时|服务端命令断开连接"
     );
 
     private static final Pattern HANDSHAKE_SUCCESS_PATTERN = Pattern.compile(
@@ -54,7 +54,7 @@ public class ConsoleCapture extends Handler {
         if (message == null) return;
 
         boolean isHuHoBot = record.getLoggerName() != null
-                && record.getLoggerName().contains("HuHoBot");
+                && record.getLoggerName().toLowerCase().contains("huhobot");
 
         // 检测握手成功
         if (isHuHoBot && HANDSHAKE_SUCCESS_PATTERN.matcher(message).find()) {
