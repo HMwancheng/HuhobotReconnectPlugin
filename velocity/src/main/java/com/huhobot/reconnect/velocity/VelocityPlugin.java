@@ -15,7 +15,6 @@ import com.velocitypowered.api.proxy.ProxyServer;
 import com.velocitypowered.api.scheduler.ScheduledTask;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.core.LogEvent;
-import org.apache.logging.log4j.core.Logger;
 import org.apache.logging.log4j.core.appender.AbstractAppender;
 import org.apache.logging.log4j.core.config.Property;
 import org.apache.logging.log4j.core.layout.PatternLayout;
@@ -73,7 +72,7 @@ public class VelocityPlugin implements ReconnectPlatform {
         ROOT_LOGGER.addHandler(consoleCapture);
 
         // Log4j Appender — Velocity 使用 Log4j，JUL Handler 拦截不到
-        Logger rootLogger = (Logger) LogManager.getRootLogger();
+        org.apache.logging.log4j.core.Logger rootLogger = (org.apache.logging.log4j.core.Logger) LogManager.getRootLogger();
         log4jAppender = new AbstractAppender(
                 "HuhobotReconnectCapture", null,
                 PatternLayout.createDefaultLayout(), true,
@@ -98,7 +97,7 @@ public class VelocityPlugin implements ReconnectPlatform {
         ROOT_LOGGER.removeHandler(consoleCapture);
         if (log4jAppender != null) {
             log4jAppender.stop();
-            ((Logger) LogManager.getRootLogger()).removeAppender(log4jAppender);
+            ((org.apache.logging.log4j.core.Logger) LogManager.getRootLogger()).removeAppender(log4jAppender);
         }
         manager.stop();
         cancelDelayedTask();
