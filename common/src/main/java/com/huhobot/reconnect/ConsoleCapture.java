@@ -48,13 +48,16 @@ public class ConsoleCapture extends Handler {
 
     @Override
     public void publish(LogRecord record) {
-        if (!platform.isActive()) return;
+        handleLog(record.getLoggerName(), record.getMessage());
+    }
 
-        String message = record.getMessage();
+    /** 供外部直接调用（如 Log4j Appender），不依赖 java.util.logging */
+    public void handleLog(String loggerName, String message) {
+        if (!platform.isActive()) return;
         if (message == null) return;
 
-        boolean isHuHoBot = record.getLoggerName() != null
-                && record.getLoggerName().toLowerCase().contains("huhobot");
+        boolean isHuHoBot = loggerName != null
+                && loggerName.toLowerCase().contains("huhobot");
 
         // 检测握手成功
         if (isHuHoBot && HANDSHAKE_SUCCESS_PATTERN.matcher(message).find()) {

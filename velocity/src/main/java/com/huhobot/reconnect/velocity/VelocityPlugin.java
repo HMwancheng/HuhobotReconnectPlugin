@@ -13,6 +13,12 @@ import com.velocitypowered.api.plugin.Plugin;
 import com.velocitypowered.api.plugin.annotation.DataDirectory;
 import com.velocitypowered.api.proxy.ProxyServer;
 import com.velocitypowered.api.scheduler.ScheduledTask;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.core.LogEvent;
+import org.apache.logging.log4j.core.Logger;
+import org.apache.logging.log4j.core.appender.AbstractAppender;
+import org.apache.logging.log4j.core.config.Property;
+import org.apache.logging.log4j.core.layout.PatternLayout;
 import org.yaml.snakeyaml.Yaml;
 
 import java.io.IOException;
@@ -42,6 +48,7 @@ public class VelocityPlugin implements ReconnectPlatform {
     private ReconnectManager manager;
     private ScheduledTask delayedTask;
     private ScheduledTask repeatingTask;
+    private AbstractAppender log4jAppender;
 
     private boolean enabled;
     private int reconnectDelay;
@@ -65,6 +72,22 @@ public class VelocityPlugin implements ReconnectPlatform {
         consoleCapture = new ConsoleCapture(this, manager);
         ROOT_LOGGER.addHandler(consoleCapture);
 
+        // Log4j Appender — Velocity 使用 Log4j，JUL Handler 拦截不到
+        Logger rootLogger = (Logger) LogManager.getRootLogger();
+        log4jAppender = new AbstractAppender(
+                "HuhobotReconnectCapture", null,
+                PatternLayout.createDefaultLayout(), true,
+                Property.EMPTY_ARRAY) {
+            @Override
+            public void append(LogEvent event) {
+                consoleCapture.handleLog(
+                        event.getLoggerName(),
+                        event.getMessage().getFormattedMessage());
+            }
+        };
+        log4jAppender.start();
+        rootLogger.addAppender(log4jAppender);
+
         server.getCommandManager().register("huhobotreconnect", new HrcCommand(), "hrc");
 
         manager.start();
@@ -73,6 +96,10 @@ public class VelocityPlugin implements ReconnectPlatform {
     @Subscribe
     public void onProxyShutdown(ProxyShutdownEvent event) {
         ROOT_LOGGER.removeHandler(consoleCapture);
+        if (log4jAppender != null) {
+            log4jAppender.stop();
+            ((Logger) LogManager.getRootLogger()).removeAppender(log4jAppender);
+        }
         manager.stop();
         cancelDelayedTask();
         cancelRepeatingTask();
