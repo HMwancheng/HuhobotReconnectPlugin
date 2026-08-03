@@ -39,6 +39,14 @@ public class ConsoleCapture extends Handler {
             "重连机器人成功"
     );
 
+    private static final Pattern STATUS_CONNECTED = Pattern.compile(
+            "HuHoBot 状态: 已连接"
+    );
+
+    private static final Pattern STATUS_DISCONNECTED = Pattern.compile(
+            "HuHoBot 状态: 未连接"
+    );
+
     private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     public ConsoleCapture(ReconnectPlatform platform, ReconnectManager manager) {
@@ -95,6 +103,17 @@ public class ConsoleCapture extends Handler {
 
         if (RECONNECT_SUCCESS_PATTERN.matcher(message).find()) {
             runOnMainThread(manager::onReconnectSuccess);
+            return;
+        }
+
+        // 检测状态查询结果（huhobot status 输出，来自 VelocityConsole，不限定 loggerName）
+        if (STATUS_CONNECTED.matcher(message).find()) {
+            runOnMainThread(manager::onAlreadyConnected);
+            return;
+        }
+
+        if (STATUS_DISCONNECTED.matcher(message).find()) {
+            runOnMainThread(manager::onDisconnected);
             return;
         }
 

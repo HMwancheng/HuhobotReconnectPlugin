@@ -127,8 +127,7 @@ public class ReconnectManager {
         healthCheckActive = true;
         platform.scheduleRepeating(() -> {
             if (!platform.isActive() || reconnectTaskPending) return;
-            platform.info("定期健康检查：执行重连检测...");
-            platform.dispatchCommand("huhobot reconnect");
+            platform.dispatchCommand("huhobot status");
         }, ticks, ticks);
     }
 
