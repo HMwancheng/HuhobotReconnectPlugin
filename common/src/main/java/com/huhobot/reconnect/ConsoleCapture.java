@@ -16,7 +16,7 @@ public class ConsoleCapture extends Handler {
     private final ReconnectManager manager;
 
     private static final Pattern DISCONNECT_PATTERN = Pattern.compile(
-            "已断开连接|连接已断开|连接失败|连接超时|服务端命令断开连接"
+            "已断开连接|连接已断开|连接超时|服务端命令断开连接"
     );
 
     private static final Pattern HANDSHAKE_SUCCESS_PATTERN = Pattern.compile(
@@ -32,7 +32,7 @@ public class ConsoleCapture extends Handler {
     );
 
     private static final Pattern ALREADY_CONNECTED_PATTERN = Pattern.compile(
-            "重连机器人失败：已在连接状态"
+            "重连机器人失败：已在连接状态|连接已存在，无需重连"
     );
 
     private static final Pattern RECONNECT_SUCCESS_PATTERN = Pattern.compile(
